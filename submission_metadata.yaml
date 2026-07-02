@@ -1,0 +1,109 @@
+# Redrob Hackathon — Submission Metadata Template
+#
+# Copy this file to your repo root as `submission_metadata.yaml` and fill it in.
+# The fields here should match what you submit via the portal at upload time.
+# Stage 3 review uses this file to verify your portal metadata.
+
+# ============================================================================
+# Team identity
+# ============================================================================
+team_name: "your-team-name-here"  # Used in leaderboard and announcements
+
+primary_contact:
+  name: "Full Name"
+  email: "primary@example.com"   # Used for all organizer communication
+  phone: "+91-XXXXXXXXXX"        # Used for top-50 / top-10 outreach
+
+team_members:
+  - name: "Member 1 Full Name"
+    email: "member1@example.com"
+    role: "ML Engineer"          # Optional, e.g. "Team Lead", "Backend", "Data"
+  - name: "Member 2 Full Name"
+    email: "member2@example.com"
+    role: "Data Engineer"
+  # Add more members as needed; solo participants list just one member
+
+# ============================================================================
+# Code and reproducibility
+# ============================================================================
+github_repo: "https://github.com/YOUR_USERNAME/YOUR_REPO"
+# Required. Must be reachable. Private repos OK if you can grant organizer
+# access at Stage 3 (the email to add will be communicated then).
+
+sandbox_link: "https://colab.research.google.com/github/YOUR_USERNAME/YOUR_REPO/blob/main/redrob_ranker_sandbox.ipynb"
+# Required. A working hosted environment where the ranker can be run on a small
+# candidate sample. See Section 10.5 of submission_spec.md for acceptable
+# platforms (HuggingFace Spaces, Streamlit Cloud, Replit, Colab, Docker, Binder).
+
+reproduce_command: "pip install -r requirements.txt && python src/precompute.py --candidates data/candidates.jsonl.gz --out artifacts && python src/rank.py --artifacts artifacts --out submission.csv"
+# Note: precompute.py is the one-time offline step (feature extraction +
+# local TF-IDF/SVD embedding fit -- no network needed at all, no model
+# download, fully deterministic). src/rank.py is the actual timed ranking
+# step (<5min, CPU-only, no network) -- it only reads the precomputed
+# artifacts/ directory. Actual measured runtimes on the full 100K pool:
+# precompute.py ~2.5min (untimed, offline), rank.py ~6s (budget: 5min).
+
+# ============================================================================
+# Compute environment
+# ============================================================================
+compute:
+  platform: "MacBook Pro M2"                    # Or: "AWS EC2 c5.4xlarge", "Local Linux box", etc.
+  cpu_cores: 8                                  # Number of CPU cores used
+  ram_gb: 16                                    # Available RAM in GB
+  python_version: "3.11.4"                      # python --version
+  os: "macOS 14.2"                              # Or "Ubuntu 22.04 LTS", etc.
+  uses_gpu_for_inference: false                 # Must be false — see compute constraints
+  has_network_during_ranking: false             # Must be false — no API calls during ranking
+  pre_computation_required: false               # true if you pre-compute embeddings or train models offline
+  pre_computation_time_minutes: 0               # Approximate, if applicable
+
+# ============================================================================
+# AI tools declaration
+# ============================================================================
+# Transparency only — declared use is NOT penalized. Be honest. Stage 5 interview
+# may verify these declarations against your code; declarations that contradict
+# your code or your interview are flagged.
+ai_tools_used:
+  - "Claude"
+
+ai_usage_summary: |
+  Used Claude for architecture discussion, code review, and debugging.
+  Claude was given the schema, JD, submission spec, and sample data (no
+  full candidate dataset) to help design the feature-extraction rules and
+  catch a real bug during testing: an early version of the skill-matching
+  logic trusted self-reported skill duration as "evidence," which a
+  keyword-stuffed sample candidate (skills list full of AI terms, career
+  history entirely unrelated) exploited. Fixed by requiring corroboration
+  from career-history prose. No candidate data was sent to any hosted LLM
+  during the actual ranking step -- ranking is 100% local, rule-based, and
+  embedding-based (see submission_spec.md compute constraints).
+
+# ============================================================================
+# Approach summary (optional but recommended)
+# ============================================================================
+methodology_summary: |
+  Two-stage local hybrid ranker. Offline (precompute.py): rule-based feature
+  extraction per candidate -- evidenced skill matches against the JD's
+  must-haves (embeddings/retrieval, vector DB, Python, eval frameworks,
+  shipped production ranking systems), hard disqualifiers, 8-check honeypot
+  detection, location/trajectory/behavioral scoring -- plus local
+  sentence-transformer embeddings of each profile. Critically, a skill only
+  counts as evidence if corroborated in career-history prose, not from its
+  own self-reported duration field; this defeats keyword-stuffed profiles
+  (verified against sample data, where a Project Manager with zero relevant
+  work history but an AI-heavy skills list scored near-zero after the fix).
+  Ranking step (rank.py, <5s on CPU for 100K): blends structured score (65%)
+  with percentile-ranked semantic similarity (35%), applies disqualifier/
+  honeypot/behavioral multipliers, and writes template-based reasoning
+  grounded entirely in extracted facts -- no LLM calls anywhere in the
+  ranking step, network-free and reproducible within the compute budget.
+
+# ============================================================================
+# Declarations
+# ============================================================================
+declarations:
+  read_submission_spec: true        # I have read submission_spec.md in full
+  code_is_original_work: true       # My code is my team's original work (using AI as a tool is fine)
+  no_collusion: true                # I have not coordinated my submission with other teams
+  honeypot_check_done: true         # explicit rule-based honeypot detection in feature_extraction.py, rate reported by rank.py on every run
+  reproduction_tested: true         # I have tested that my reproduce_command runs end-to-end
