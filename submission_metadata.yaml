@@ -47,7 +47,7 @@ compute:
   platform: "Windows 11 Home"                    # Or: "AWS EC2 c5.4xlarge", "Local Linux box", etc.
   cpu_cores: 16                                  # Number of CPU cores used
   ram_gb: 32                                    # Available RAM in GB
-  python_version: "3.11.4"                      # python --version
+  python_version: "3.11.9"                      # python --version
   os: "25H2 Windows 11"                              # Or "Ubuntu 22.04 LTS", etc.
   uses_gpu_for_inference: false                 # Must be false — see compute constraints
   has_network_during_ranking: false             # Must be false — no API calls during ranking
